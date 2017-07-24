@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TestDotNetCore.Handlers;
 using TestDotNetCore.Services;
+using TestDotNetCore.Utils.FileLogger;
+using System.IO;
 
 namespace TestDotNetCore
 {
@@ -19,21 +21,29 @@ namespace TestDotNetCore
 
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
-			loggerFactory.AddConsole();
+			loggerFactory.AddConsole(LogLevel.Information);
 
 			if (env.IsDevelopment())
 				app.UseDeveloperExceptionPage();
 
-			TimeService timeServ = app.ApplicationServices.GetService<TimeService>();
+			loggerFactory.AddFile(Path.Combine(Directory.GetCurrentDirectory(), "log.txt"));
+			var logger = loggerFactory.CreateLogger("FileLogger");
+
+			app.UseTimer();
 
 			app.UseErrorHandler();
 			foreach (string reqParam in this.requiredParams)
 				app.UseRequiredParams(reqParam);
 			app.UseAuthToken();
-			app.UseTimer();
 
-            app.Run(async (context) =>
+			app.Run(async (context) =>
             {
+				logger.LogInformation("Processing request {0}", context.Request.Path);
+				var queryData = context.Request.Query;
+				foreach (string key in queryData.Keys)
+				{
+					logger.LogInformation("{0}: {1}", key, queryData[key]);
+				}
 				int z = 1;
 				foreach (string paramName in this.requiredParams)
 					z *= int.Parse(context.Request.Query[paramName]);
