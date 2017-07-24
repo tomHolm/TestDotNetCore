@@ -1,25 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TestDotNetCore.Handlers;
+using TestDotNetCore.Services;
 
 namespace TestDotNetCore
 {
     public class Startup
     {
-		private string[] requiredParams = new string[] { "a", "b", "c" };
+		private string[] requiredParams = new string[] {"a", "b", "c"};
 
 		public void ConfigureServices(IServiceCollection services)
         {
+			services.AddTimeService();
         }
 
-		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			loggerFactory.AddConsole();
@@ -27,8 +24,13 @@ namespace TestDotNetCore
 			if (env.IsDevelopment())
 				app.UseDeveloperExceptionPage();
 
+			TimeService timeServ = app.ApplicationServices.GetService<TimeService>();
+
+			app.UseErrorHandler();
 			foreach (string reqParam in this.requiredParams)
 				app.UseRequiredParams(reqParam);
+			app.UseAuthToken();
+			app.UseTimer();
 
             app.Run(async (context) =>
             {
@@ -36,7 +38,7 @@ namespace TestDotNetCore
 				foreach (string paramName in this.requiredParams)
 					z *= int.Parse(context.Request.Query[paramName]);
                 await context.Response.WriteAsync($"a * b * c = {z}");
-            });
+			});
         }
     }
 }

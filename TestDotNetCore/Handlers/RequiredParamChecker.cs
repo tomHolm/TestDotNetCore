@@ -1,9 +1,18 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Builder;
 
 namespace TestDotNetCore.Handlers
 {
-    public class RequiredParamChecker
+	public static class RequiredParamExtension
+	{
+		public static IApplicationBuilder UseRequiredParams(this IApplicationBuilder builder, string requiredParam)
+		{
+			return builder.UseMiddleware<RequiredParamChecker>(requiredParam);
+		}
+	}
+
+	public class RequiredParamChecker
     {
 		private readonly RequestDelegate _next;
 		private string _reqParam;
