@@ -7,6 +7,7 @@ using TestDotNetCore.Handlers;
 using TestDotNetCore.Services;
 using TestDotNetCore.Utils.FileLogger;
 using System.IO;
+using System.Collections.Generic;
 
 namespace TestDotNetCore
 {
@@ -21,19 +22,23 @@ namespace TestDotNetCore
 
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
-			loggerFactory.AddConsole(LogLevel.Information);
+			app.UseIconSpike();
+			app.UseErrorHandler();
 
 			if (env.IsDevelopment())
 				app.UseDeveloperExceptionPage();
 
+			loggerFactory.AddConsole(LogLevel.Information);
 			loggerFactory.AddFile(Path.Combine(Directory.GetCurrentDirectory(), "log.txt"));
 			var logger = loggerFactory.CreateLogger("FileLogger");
 
 			app.UseTimer();
 
-			app.UseErrorHandler();
+			List<string> reqParams = new List<string>();
 			foreach (string reqParam in this.requiredParams)
-				app.UseRequiredParams(reqParam);
+				reqParams.Add(reqParam);
+			app.UseRequiredParams(reqParams);
+
 			app.UseAuthToken();
 
 			app.Run(async (context) =>

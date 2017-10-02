@@ -21,7 +21,7 @@ namespace TestDotNetCore.Utils.FileLogger
 
 		public bool IsEnabled(LogLevel logLevel)
 		{
-			return true; // logLevel < LogLevel.Information;
+			return logLevel < LogLevel.Information;
 		}
 
 		public void Log<TState>(LogLevel level, EventId eventId, TState state, Exception e, Func<TState, Exception, string> formatter)

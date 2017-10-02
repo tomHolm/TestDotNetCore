@@ -1,40 +1,43 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Builder;
+using System.Collections.Generic;
 
 namespace TestDotNetCore.Handlers
 {
 	public static class RequiredParamExtension
 	{
-		public static IApplicationBuilder UseRequiredParams(this IApplicationBuilder builder, string requiredParam)
+		public static IApplicationBuilder UseRequiredParams(this IApplicationBuilder builder, List<string> requiredParams)
 		{
-			return builder.UseMiddleware<RequiredParamChecker>(requiredParam);
+			return builder.UseMiddleware<RequiredParamChecker>(requiredParams);
 		}
 	}
 
 	public class RequiredParamChecker
     {
 		private readonly RequestDelegate _next;
-		private string _reqParam;
+		private List<string> _reqParams;
 
-		public RequiredParamChecker(RequestDelegate next, string requiredParam)
+		public RequiredParamChecker(RequestDelegate next, List<string> requiredParams)
 		{
 			this._next = next;
-			this._reqParam = requiredParam;
+			this._reqParams = requiredParams;
 		}
 
 		public async Task Invoke(HttpContext context)
 		{
-			if (context.Request.Query.ContainsKey(this._reqParam))
+			foreach (string param in this._reqParams)
 			{
-				var reqParam = context.Request.Query[this._reqParam];
-				if (string.IsNullOrWhiteSpace((string)reqParam) || !int.TryParse(reqParam, out int result))
-					await context.Response.WriteAsync($"Parameter {this._reqParam} is incorrect");
+				if (context.Request.Query.ContainsKey(param))
+				{
+					var reqParam = context.Request.Query[param];
+					if (string.IsNullOrWhiteSpace((string)reqParam) || !int.TryParse(reqParam, out int result))
+						await context.Response.WriteAsync($"Parameter {param} is incorrect");
+				}
 				else
-					await this._next.Invoke(context);
+					await context.Response.WriteAsync($"Parameter {param} is missing");
 			}
-			else
-				await context.Response.WriteAsync($"Parameter {this._reqParam} is missing");
+			await this._next.Invoke(context);
 		}
     }
 }
